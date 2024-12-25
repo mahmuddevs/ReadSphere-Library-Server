@@ -130,7 +130,7 @@ bookRouter.post('/borrow-book', async (req, res) => {
     }
 });
 
-bookRouter.post("/verify-borrow", async (req, res) => {
+bookRouter.post('/verify-borrow', async (req, res) => {
     const { userEmail, id } = req.body
     const query = { userEmail, bookID: id }
 
@@ -141,6 +141,41 @@ bookRouter.post("/verify-borrow", async (req, res) => {
             return res.send({ borrowed: true })
         }
         res.send({ borrowed: false })
+    } catch (err) {
+        console.error(err);
+        return res.status(501).send({ message: "Server Side Error" });
+    }
+})
+
+bookRouter.get('/borrowed-book/:email', verifyToken, async (req, res) => {
+    const { email } = req.params
+    try {
+        const borrowedBooks = await borrowedCollection.aggregate([
+            {
+                $match: { userEmail: email }
+            },
+            {
+                $addFields: {
+                    bookID: { $toObjectId: "$bookID" }
+                }
+            },
+            {
+                $lookup: {
+                    from: "books",
+                    localField: "bookID",
+                    foreignField: "_id",
+                    as: "bookDetails"
+                }
+            },
+            {
+                $unwind: {
+                    path: "$bookDetails",
+                }
+            }
+        ]).toArray();
+
+        res.send(borrowedBooks)
+
     } catch (err) {
         console.error(err);
         return res.status(501).send({ message: "Server Side Error" });
