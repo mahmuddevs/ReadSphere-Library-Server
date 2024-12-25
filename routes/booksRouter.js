@@ -1,5 +1,5 @@
 import express from 'express'
-import { booksCollection } from '../db/db.collections.js'
+import { booksCollection, borrowedCollection } from '../db/db.collections.js'
 import { verifyToken } from '../configs/jwt.js';
 import { ObjectId } from 'mongodb';
 
@@ -55,7 +55,7 @@ bookRouter.post('/book-by-category', async (req, res) => {
 });
 
 
-bookRouter.put('/update-book/:id', async (req, res) => {
+bookRouter.put('/update-book/:id', verifyToken, async (req, res) => {
     const { id } = req.params
     const updateData = req.body
 
@@ -84,6 +84,67 @@ bookRouter.put('/update-book/:id', async (req, res) => {
     }
 })
 
+bookRouter.get("/available-books", async (req, res) => {
+    const filter = { quantity: { $gt: 0 } };
+    try {
+        const books = booksCollection.find(filter)
+        const result = await books.toArray()
+        res.send(result);
+    } catch (err) {
+        res.status(501).send({ message: "Server Side Error" })
+    }
+})
 
+bookRouter.post('/borrow-book', async (req, res) => {
+    const requestDate = new Date();
+    const { userName, userEmail, bookID, returnDate } = req.body;
+
+    const borrowedBook = { userName, userEmail, bookID, requestDate, returnDate };
+
+    try {
+        const existing = await borrowedCollection.findOne({ bookID, userEmail });
+
+        if (existing) {
+            return res.send({ message: "Already Borrwed" })
+        }
+
+        const result = await borrowedCollection.insertOne(borrowedBook);
+
+        if (result?.acknowledged) {
+            const query = { _id: new ObjectId(bookID) };
+            const option = { $inc: { quantity: -1 } };
+
+            const updateQuantity = await booksCollection.updateOne(query, option);
+
+            if (updateQuantity.modifiedCount > 0) {
+                return res.send({ message: "Successfully Borrowed Book" });
+            } else {
+                return res.send({ message: "Failed to update book quantity or book not found." });
+            }
+        } else {
+            return res.send({ message: "Failed to borrow book. Insertion failed." });
+        }
+    } catch (err) {
+        console.error(err);
+        return res.status(501).send({ message: "Server Side Error" });
+    }
+});
+
+bookRouter.post("/verify-borrow", async (req, res) => {
+    const { userEmail, id } = req.body
+    const query = { userEmail, bookID: id }
+
+    try {
+        const existing = await borrowedCollection.findOne(query);
+
+        if (existing) {
+            return res.send({ borrowed: true })
+        }
+        res.send({ borrowed: false })
+    } catch (err) {
+        console.error(err);
+        return res.status(501).send({ message: "Server Side Error" });
+    }
+})
 
 export default bookRouter
