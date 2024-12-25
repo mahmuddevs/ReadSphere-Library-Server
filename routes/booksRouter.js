@@ -182,4 +182,30 @@ bookRouter.get('/borrowed-book/:email', verifyToken, async (req, res) => {
     }
 })
 
+bookRouter.get('/return-book/:id', async (req, res) => {
+    const { id } = req.params
+    try {
+        const query = { _id: new ObjectId(id) }
+        const data = await borrowedCollection.findOne(query)
+        const bookID = data.bookID
+        const filter = { _id: new ObjectId(bookID) }
+
+        const option = { $inc: { quantity: 1 } };
+
+        const increseQuantity = await booksCollection.updateOne(filter, option);
+
+        if (increseQuantity.modifiedCount > 0) {
+            const result = await borrowedCollection.deleteOne(query)
+
+            return res.send(result)
+        } else {
+            return res.send("Book Return Failed")
+        }
+
+    } catch (err) {
+        console.error(err);
+        return res.status(501).send({ message: "Server Side Error" });
+    }
+})
+
 export default bookRouter
