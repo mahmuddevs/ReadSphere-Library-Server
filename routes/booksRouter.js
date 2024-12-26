@@ -55,7 +55,7 @@ bookRouter.post('/book-by-category', async (req, res) => {
 });
 
 
-bookRouter.put('/update-book/:id', verifyToken, async (req, res) => {
+bookRouter.put('/update-book/:id', async (req, res) => {
     const { id } = req.params
     const updateData = req.body
 
