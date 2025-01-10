@@ -1,6 +1,5 @@
 import express from 'express'
 import { booksCollection, borrowedCollection } from '../db/db.collections.js'
-import { verifyToken } from '../configs/jwt.js';
 import { ObjectId } from 'mongodb';
 
 const bookRouter = express.Router()
@@ -17,20 +16,10 @@ bookRouter.get('/all-books', async (req, res) => {
     }
 })
 
-bookRouter.get('/featured-books', async (req, res) => {
-    try {
-        const featuredBooks = await booksCollection.find().sort({ "createdAt": -1 }).limit(4).toArray();
-        res.send(featuredBooks)
-    }
-    catch (err) {
-        res.status(501).send({ message: "Server Side Error" })
-    }
-})
-
 bookRouter.post('/add-book', async (req, res) => {
     const data = req.body
     try {
-        const result = await booksCollection.insertOne({ ...data, createdAt: new Date() })
+        const result = await booksCollection.insertOne(data)
         res.send(result)
     }
     catch (err) {
@@ -41,12 +30,9 @@ bookRouter.post('/add-book', async (req, res) => {
 
 bookRouter.post('/sort-by-rating', async (req, res) => {
     const { sort } = req.body
-
     if (sort === "") {
-        const books = await booksCollection.find().toArray();
-        return res.send(books)
+        const books = await booksCollection.find().toArray(); return res.send(books)
     }
-
     const books = await booksCollection.find().sort({ rating: sort }).toArray()
     return res.send(books)
 })
@@ -169,7 +155,7 @@ bookRouter.post('/verify-borrow', async (req, res) => {
     }
 })
 
-bookRouter.get('/borrowed-book/:email', verifyToken, async (req, res) => {
+bookRouter.get('/borrowed-book/:email', async (req, res) => {
     const { email } = req.params
     try {
         const borrowedBooks = await borrowedCollection.aggregate([
