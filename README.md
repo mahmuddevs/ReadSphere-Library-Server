@@ -56,3 +56,21 @@ This repository contains the backend of the ReadSphere Library Management System
 4. **mongodb** - MongoDB client for database operations.
 5. **jsonwebtoken** - Used for creating and verifying JSON Web Tokens (JWT) for secure user authentication.
 6. **cookie-parser** - Middleware for parsing cookies, used to manage JWTs stored in cookies for user sessions.
+
+### .env Setup
+To securely manage environment variables, create a `.env` file in the root of your project and include the following:
+
+`PORT = port number`
+`DB_USER = username` 
+`DB_Pass = db pass`
+`JWT_SECRET = use your own`
+`NODE_ENV = development`
+
+### Local Installation Guide
+
+Follow the steps below to set up and run the backend of the **ReadSphere Library Management System** locally:
+
+1. **Clone the repository:**
+2. **Run npm install**
+3. **Run npm run start for node or npm run dev for nodemon**
+
