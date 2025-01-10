@@ -6,7 +6,7 @@ import { ObjectId } from 'mongodb';
 const bookRouter = express.Router()
 
 
-bookRouter.get('/all-books', verifyToken, async (req, res) => {
+bookRouter.get('/all-books', async (req, res) => {
     try {
         const books = booksCollection.find();
         const result = await books.toArray()
@@ -17,16 +17,38 @@ bookRouter.get('/all-books', verifyToken, async (req, res) => {
     }
 })
 
+bookRouter.get('/featured-books', async (req, res) => {
+    try {
+        const featuredBooks = await booksCollection.find().sort({ "createdAt": -1 }).limit(4).toArray();
+        res.send(featuredBooks)
+    }
+    catch (err) {
+        res.status(501).send({ message: "Server Side Error" })
+    }
+})
+
 bookRouter.post('/add-book', async (req, res) => {
     const data = req.body
     try {
-        const result = await booksCollection.insertOne(data)
+        const result = await booksCollection.insertOne({ ...data, createdAt: new Date() })
         res.send(result)
     }
     catch (err) {
         res.status(501).send({ message: "Server Side Error" })
     }
 
+})
+
+bookRouter.post('/sort-by-rating', async (req, res) => {
+    const { sort } = req.body
+
+    if (sort === "") {
+        const books = await booksCollection.find().toArray();
+        return res.send(books)
+    }
+
+    const books = await booksCollection.find().sort({ rating: sort }).toArray()
+    return res.send(books)
 })
 
 bookRouter.post('/single-book', async (req, res) => {
