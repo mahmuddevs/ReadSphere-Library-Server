@@ -15,6 +15,16 @@ bookRouter.get('/all-books', async (req, res) => {
         res.status(501).send({ message: "Server Side Error" })
     }
 })
+bookRouter.get('/featured-books', async (req, res) => {
+    try {
+        const featuredBooks = await booksCollection.find().sort({ createdAt: -1 }).limit(4).toArray();
+
+        res.send(featuredBooks)
+    }
+    catch (err) {
+        res.status(501).send({ message: "Server Side Error" })
+    }
+})
 
 bookRouter.post('/add-book', async (req, res) => {
     const data = req.body
